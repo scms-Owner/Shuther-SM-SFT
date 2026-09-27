@@ -26,37 +26,21 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
-// Default initial dataset pre-loaded with the user's uploaded slip
+// Initial real blank state for construction site
 const INITIAL_HEADER: ChallanHeader = {
-  passNumber: '96692',
-  date: '14/09/2024',
-  time: '5:40 PM',
-  recipient: 'AL-Amin',
-  designation: 'TR ID',
-  sourceProject: 'Demura Sonitia to project Non kh Dunbo Non',
-  transportNumber: 'TR-59',
-  destination: 'Main Construction Yard',
-  receiverSignNote: 'Received Alamin 14/09/24',
-  notes: 'Store Keeper & Inventory Officer verification confirmed.',
+  passNumber: '',
+  date: new Date().toLocaleDateString('en-GB'),
+  time: '',
+  recipient: '',
+  designation: '',
+  sourceProject: '',
+  transportNumber: '',
+  destination: '',
+  receiverSignNote: '',
+  notes: '',
 };
 
-const INITIAL_ITEMS: ShutterItem[] = [
-  { id: 'item_1', description: 'Steel Shutter', widthMm: 330, lengthMm: 1230, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_2', description: 'Steel Shutter', widthMm: 475, lengthMm: 885, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_3', description: 'Steel Shutter', widthMm: 475, lengthMm: 860, quantity: 2, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_4', description: 'Steel Shutter', widthMm: 475, lengthMm: 1140, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_5', description: 'Steel Shutter', widthMm: 530, lengthMm: 850, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_6', description: 'Steel Shutter', widthMm: 500, lengthMm: 1500, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_7', description: 'Steel Shutter', widthMm: 450, lengthMm: 1000, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_8', description: 'Steel Shutter', widthMm: 300, lengthMm: 930, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_9', description: 'Steel Shutter', widthMm: 430, lengthMm: 930, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_10', description: 'Steel Shutter', widthMm: 670, lengthMm: 900, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_11', description: 'Steel Shutter', widthMm: 450, lengthMm: 1050, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_12', description: 'Steel Shutter', widthMm: 450, lengthMm: 950, quantity: 2, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_13', description: 'Steel Shutter', widthMm: 300, lengthMm: 1140, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_14', description: 'Steel Shutter', widthMm: 480, lengthMm: 1040, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-  { id: 'item_15', description: 'Steel Shutter', widthMm: 375, lengthMm: 1500, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-];
+const INITIAL_ITEMS: ShutterItem[] = [];
 
 export default function App() {
   const [lang, setLang] = useState<'bn' | 'en'>('bn');
@@ -242,11 +226,13 @@ export default function App() {
               {lang === 'bn' ? 'বর্তমান সক্রিয় চালান:' : 'Active Slip:'}
             </span>
             <span className="font-mono font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-              #{header.passNumber || '96692'}
+              {header.passNumber ? `#${header.passNumber}` : (lang === 'bn' ? 'নতুন চালান' : 'New Slip')}
             </span>
-            <span className="text-slate-400 hidden sm:inline">
-              | {header.sourceProject || 'Site Shuttering Delivery'}
-            </span>
+            {header.sourceProject && (
+              <span className="text-slate-400 hidden sm:inline">
+                | {header.sourceProject}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

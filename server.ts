@@ -17,6 +17,17 @@ const isProd = process.env.NODE_ENV === 'production';
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Enable CORS for cross-domain requests (e.g., when client is hosted on GitHub Pages)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Server-side Gemini initialization
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -71,8 +82,8 @@ Extract:
 Be meticulous and extract all rows listed on the slip in order. Return valid structured JSON.
 `;
 
-    // Candidate models in priority order for resilience
-    const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
+    // Candidate models in priority order: gemini-3.1-flash-lite has separate quota and high speed
+    const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash'];
     let lastError: any = null;
     let responseText: string | undefined;
 
@@ -139,8 +150,8 @@ Be meticulous and extract all rows listed on the slip in order. Return valid str
       } catch (err: any) {
         lastError = err;
         console.warn(`Model ${model} failed: ${err.message || err}. Trying next fallback...`);
-        // Small delay before trying next model
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        // If quota exceeded or error, quickly try next model
+        await new Promise((resolve) => setTimeout(resolve, 400));
       }
     }
 
@@ -152,53 +163,30 @@ Be meticulous and extract all rows listed on the slip in order. Return valid str
     return res.json({ success: true, data: parsedData });
   } catch (error: any) {
     console.error('Scan Challan Error:', error);
-    const isOverload = error.message?.includes('503') || error.message?.includes('high demand') || error.status === 503;
-    const userMessage = isOverload
-      ? 'গুগল এআই সার্ভারে এই মুহূর্তে সাময়িক অতিরিক্ত ট্রাফিক রয়েছে। কয়েক সেকেন্ড পর নিচে "পুনরায় চেষ্টা করুন" বাটনে ক্লিক করুন।'
-      : (error.message || 'চালান স্ক্যান করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+    const isQuotaExceeded =
+      error.message?.includes('429') ||
+      error.message?.includes('RESOURCE_EXHAUSTED') ||
+      error.message?.includes('Quota exceeded') ||
+      error.status === 429;
+    const isOverload =
+      error.message?.includes('503') ||
+      error.message?.includes('high demand') ||
+      error.status === 503;
+
+    let userMessage = error.message || 'চালান স্ক্যান করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
+    if (isQuotaExceeded) {
+      userMessage = 'গুগল এআই এর দৈনিক ফ্রি রিকোয়েস্ট কোটা শেষ হয়েছে (429 Rate Limit)। আপনি সরাসরি ডেমো চালানটি লোড করতে পারেন অথবা নিজে সাইজ ও পিস টাইপ করে নির্ভুল হিসাব বের করতে পারেন।';
+    } else if (isOverload) {
+      userMessage = 'গুগল এআই সার্ভারে এই মুহূর্তে সাময়িক অতিরিক্ত ট্রাফিক রয়েছে। কয়েক সেকেন্ড পর নিচে "পুনরায় চেষ্টা করুন" বাটনে ক্লিক করুন।';
+    }
 
     return res.status(500).json({
       success: false,
+      isQuotaExceeded,
       isOverload,
       error: userMessage,
     });
   }
-});
-
-// Calculation helper endpoint or sample data
-app.get('/api/sample-challan', (_req, res) => {
-  res.json({
-    success: true,
-    data: {
-      passNumber: '96692',
-      date: '14/09/2024',
-      time: '5:40 PM',
-      recipient: 'AL-Amin',
-      designation: 'TR ID',
-      sourceProject: 'Demura Sonitia to project Non kh Dunbo Non',
-      transportNumber: 'TR-59',
-      destination: 'Main Site Yard',
-      receiverSignNote: 'Received Alamin 14/09/24',
-      items: [
-        { id: '1', description: 'Steel Shutter', widthMm: 330, lengthMm: 1230, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '2', description: 'Steel Shutter', widthMm: 475, lengthMm: 885, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '3', description: 'Steel Shutter', widthMm: 475, lengthMm: 860, quantity: 2, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '4', description: 'Steel Shutter', widthMm: 475, lengthMm: 1140, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '5', description: 'Steel Shutter', widthMm: 530, lengthMm: 850, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '6', description: 'Steel Shutter', widthMm: 500, lengthMm: 1500, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '7', description: 'Steel Shutter', widthMm: 450, lengthMm: 1000, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '8', description: 'Steel Shutter', widthMm: 300, lengthMm: 930, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '9', description: 'Steel Shutter', widthMm: 430, lengthMm: 930, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '10', description: 'Steel Shutter', widthMm: 670, lengthMm: 900, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '11', description: 'Steel Shutter', widthMm: 450, lengthMm: 1050, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '12', description: 'Steel Shutter', widthMm: 450, lengthMm: 950, quantity: 2, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '13', description: 'Steel Shutter', widthMm: 300, lengthMm: 1140, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '14', description: 'Steel Shutter', widthMm: 480, lengthMm: 1040, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-        { id: '15', description: 'Steel Shutter', widthMm: 375, lengthMm: 1500, quantity: 1, unit: 'u', remarks: '', confidence: 'high' },
-      ],
-      notes: 'Store Keeper & Inventory Officer verification confirmed.',
-    },
-  });
 });
 
 async function startServer() {

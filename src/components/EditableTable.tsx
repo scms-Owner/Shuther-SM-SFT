@@ -49,8 +49,8 @@ export const EditableTable: React.FC<EditableTableProps> = ({ items, onChange, l
     const newItem: ShutterItem = {
       id: `manual_${Date.now()}`,
       description: 'Steel Shutter',
-      widthMm: 450,
-      lengthMm: 1000,
+      widthMm: 0,
+      lengthMm: 0,
       quantity: 1,
       unit: 'u',
       remarks: '',
@@ -138,8 +138,24 @@ export const EditableTable: React.FC<EditableTableProps> = ({ items, onChange, l
           <tbody className="divide-y divide-slate-800/80 text-slate-200">
             {filteredItems.length === 0 ? (
               <tr>
-                <td colSpan={11} className="py-8 text-center text-slate-400">
-                  {lang === 'bn' ? 'কোনো শাটার ডেটা পাওয়া যায়নি' : 'No shutter items found'}
+                <td colSpan={11} className="py-12 text-center text-slate-400">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <p className="text-sm font-medium text-slate-300">
+                      {lang === 'bn' ? 'কোনো শাটার এন্ট্রি নেই' : 'No shutter items entered yet'}
+                    </p>
+                    <p className="text-xs text-slate-500 max-w-sm">
+                      {lang === 'bn'
+                        ? 'উপরের "চালান স্ক্যান করুন" বাটনে ক্লিক করে ছবি তুলুন অথবা সরাসরি নিচে ক্লিক করে হাতে সাইজ লিখুন।'
+                        : 'Scan your slip with camera or click below to enter dimensions manually.'}
+                    </p>
+                    <button
+                      onClick={handleAddRow}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{lang === 'bn' ? 'নতুন শাটার যোগ করুন' : 'Add First Shutter'}</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : (

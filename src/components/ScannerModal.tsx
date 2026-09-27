@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Upload, Sparkles, X, AlertCircle, RefreshCw, Check } from 'lucide-react';
+import { Camera, Upload, Sparkles, X, AlertCircle, RefreshCw, Edit3 } from 'lucide-react';
 import { ChallanHeader, ShutterItem } from '../types';
+import { getApiBaseUrl } from '../utils/api';
 
 interface ScannerModalProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
   onScanComplete,
   lang,
 }) => {
-  const [activeTab, setActiveTab] = useState<'upload' | 'camera' | 'sample'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'camera'>('upload');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanProgress, setScanProgress] = useState<string>('');
@@ -104,7 +105,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Perform AI scan using Express backend + Gemini 3.8 Flash
+  // Perform AI scan using backend API (works both on AI Studio & GitHub Pages)
   const processImageWithAI = async (base64Image: string) => {
     setIsScanning(true);
     setError(null);
@@ -117,7 +118,8 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
           : 'Reading handwritten dimensions and pieces...'
       );
 
-      const response = await fetch('/api/scan-challan', {
+      const apiUrl = `${getApiBaseUrl()}/api/scan-challan`;
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -126,7 +128,19 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
         }),
       });
 
-      const result = await response.json();
+      let result: any = null;
+      try {
+        result = await response.json();
+      } catch (jsonErr) {
+        if (response.status === 404) {
+          throw new Error(
+            lang === 'bn'
+              ? 'ব্যাকএন্ড সার্ভার কানেকশন পাওয়া যায়নি (404 Not Found)।'
+              : 'Backend server not reachable.'
+          );
+        }
+        throw new Error('Invalid response from AI server');
+      }
 
       if (!response.ok || !result.success) {
         throw new Error(result.error || 'Failed to scan challan');
@@ -172,33 +186,9 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
       setError(
         err.message ||
           (lang === 'bn'
-            ? 'ছবিটি পড়তে ব্যর্থ হয়েছে। আপনি ডেমো চালানটি লোড করে দেখতে পারেন।'
-            : 'Failed to read image. You can try loading the sample challan.')
+            ? 'ছবিটি পড়তে ব্যর্থ হয়েছে। আপনি ছবিটি ভালো আলোতে তুলে আবার ট্রাই করতে পারেন অথবা টেবিলে সরাসরি মাপ বসাতে পারেন।'
+            : 'Failed to read image. Please retry with a clearer photo or enter dimensions directly.')
       );
-    } finally {
-      setIsScanning(false);
-    }
-  };
-
-  // One-click load sample
-  const handleLoadSample = async () => {
-    setIsScanning(true);
-    setError(null);
-    setScanProgress(lang === 'bn' ? 'আপনার আপলোডকৃত চালানের ডেটা লোড হচ্ছে...' : 'Loading sample challan data...');
-
-    try {
-      const res = await fetch('/api/sample-challan');
-      const json = await res.json();
-      if (json.success) {
-        onScanComplete({
-          header: json.data,
-          items: json.data.items,
-        });
-        onClose();
-      }
-    } catch (err: any) {
-      console.error(err);
-      setError('Failed to load sample');
     } finally {
       setIsScanning(false);
     }
@@ -217,11 +207,11 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-white text-base">
-                {lang === 'bn' ? 'সাটার রিসিভ চালান স্ক্যান করুন' : 'Scan Shutter Receive Challan'}
+                {lang === 'bn' ? 'আসল সাটার চালান স্ক্যান করুন' : 'Scan Shutter Receive Challan'}
               </h3>
               <p className="text-xs text-slate-400">
                 {lang === 'bn'
-                  ? 'ছবি তুলুন বা ফাইল আপলোড করুন, AI স্বয়ংক্রিয়ভাবে মিলিমিটার মাপ পড়ে হিসাব করে দেবে'
+                  ? 'ছবি তুলুন বা আপলোড করুন, AI স্বয়ংক্রিয়ভাবে মিলিমিটার মাপ পড়ে হিসাব করে দেবে'
                   : 'Capture or upload slip, AI will automatically read mm dimensions and calculate'}
               </p>
             </div>
@@ -255,31 +245,16 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
             <Camera className="w-4 h-4" />
             <span>{lang === 'bn' ? 'সরাসরি ক্যামেরা' : 'Live Camera'}</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab('sample')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition ${
-              activeTab === 'sample' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>{lang === 'bn' ? 'ডেমো চালান (১-ক্লিক)' : 'Demo Challan'}</span>
-          </button>
         </div>
 
         {/* Modal Body */}
         <div className="p-5 overflow-y-auto space-y-4 flex-1">
           {error && (
-            <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300 space-y-2">
+            <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300 space-y-2.5">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="font-semibold">{error}</p>
-                  <p className="text-slate-400 mt-1">
-                    {lang === 'bn'
-                      ? 'AI সার্ভারে কখনো সাময়িক চাপ থাকলে কয়েক সেকেন্ড পর পুনরায় চেষ্টা করুন অথবা সরাসরি ডেমো চালানটি লোড করুন।'
-                      : 'If AI servers experience temporary spikes, retry in a moment or load the sample slip.'}
-                  </p>
+                  <p className="font-semibold text-red-200">{error}</p>
                 </div>
               </div>
 
@@ -296,12 +271,11 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
                 )}
 
                 <button
-                  onClick={handleLoadSample}
-                  disabled={isScanning}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white font-semibold rounded-lg text-xs transition"
+                  onClick={onClose}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs transition"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{lang === 'bn' ? 'ডেমো চালানটি লোড করুন' : 'Load Sample Challan'}</span>
+                  <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{lang === 'bn' ? 'সরাসরি টেবিলে মাপ লিখুন' : 'Enter Manually in Table'}</span>
                 </button>
               </div>
             </div>
@@ -327,10 +301,10 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
                     <Upload className="w-8 h-8" />
                   </div>
                   <p className="text-sm font-semibold text-slate-200">
-                    {lang === 'bn' ? 'চালানের ছবি এখানে ক্লিক করে সিলেক্ট করুন' : 'Click to browse Challan Image'}
+                    {lang === 'bn' ? 'চালানের আসল ছবি সিলেক্ট করতে ক্লিক করুন' : 'Click to browse Challan Image'}
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
-                    JPG, PNG, WEBP (সর্বোচ্চ ২৫ মেগাবাইট)
+                    JPG, PNG, WEBP (ক্যামেরার ছবি বা গ্যালারি থেকে)
                   </p>
                 </div>
               ) : (
@@ -433,48 +407,6 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
                   </button>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* TAB 3: Sample / Demo Challan */}
-          {activeTab === 'sample' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
-                  <Check className="w-4 h-4" />
-                  <span>{lang === 'bn' ? 'আপনার আপলোড করা স্টিল শাটার রিসিভ চালান' : 'Your uploaded Shutter Receipt'}</span>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  {lang === 'bn'
-                    ? 'আপনার ছবির পাস নং ৯৬৬৯২, ট্রান্সপোর্ট TR-59, রিসিভার AL-Amin এর চালানটির ১৫টি শাটারের সম্পূর্ণ মেজারমেন্ট চার্ট ও মিলিমিটার থেকে স্কয়ার মিটার ও স্কয়ার ফিট হিসাব এখনই দেখতে ক্লিক করুন।'
-                    : 'Instant test with the 15 shutter line items from Pass #96692, TR-59, Al-Amin.'}
-                </p>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400 font-mono bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-                  <div>পাস নং: 96692</div>
-                  <div>গাড়ি: TR-59</div>
-                  <div>মোট আইটেম: 15 টি সাইজ</div>
-                  <div>মোট শাটার: 17 পিস</div>
-                </div>
-
-                <button
-                  onClick={handleLoadSample}
-                  disabled={isScanning}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition"
-                >
-                  {isScanning ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>{scanProgress}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>{lang === 'bn' ? 'এই চালানটি লোড করে টেস্ট করুন' : 'Load and Test this Challan'}</span>
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
           )}
         </div>

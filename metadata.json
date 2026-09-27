@@ -1,0 +1,7 @@
+{
+  "name": "ShutterScan AI - শাটার ক্যালকুলেটর ও স্ক্যানার",
+  "description": "AI চালিত শাটার রিসিভ চালান স্ক্যানার ও মিলিমিটার থেকে স্কয়ার মিটার এবং স্কয়ার ফিট স্বয়ংক্রিয় হিসাব টুল।",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

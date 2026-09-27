@@ -1,11 +1,53 @@
-<div align="center">
+# ShutterScan AI - শাটার ক্যালকুলেটর ও স্ক্যানার (Steel Shutter Calculator)
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+AI চালিত স্টিল শাটার রিসিভ চালান স্ক্যানার ও মিলিমিটার (mm) থেকে স্কয়ার মিটার (m²) এবং স্কয়ার ফিট (sqft) হিসাব টুল।
 
-  <h1>Built with AI Studio</h2>
+## 🚀 GitHub Pages-এ হোস্ট করার সহজ নিয়ম (Deployment Guide)
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+এই প্রোজেক্টটিতে সম্পূর্ণ তৈরি **GitHub Actions Workflow** যুক্ত করা হয়েছে (`.github/workflows/deploy.yml`)। আপনি গিটহাবে পুশ করলেই এটি স্বয়ংক্রিয়ভাবে বিল্ড হয়ে হোস্ট হয়ে যাবে।
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+### ধাপসমূহ:
 
-</div>
+1. **গিটহাবে কোড আপলোড করুন:**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit for ShutterScan AI"
+   git branch -M main
+   git remote add origin https://github.com/আপনার-ইউজারনেম/আপনার-রেপো-নাম.git
+   git push -u origin main
+   ```
+
+2. **GitHub Pages সেটিংস চালু করুন:**
+   - আপনার GitHub Repository-তে যান।
+   - **Settings** ট্যাবে ক্লিক করুন।
+   - বাম পাশের মেনু থেকে **Pages** অপশনে যান।
+   - **Build and deployment** সেকশনের অধীনে **Source** ড্রপডাউন থেকে **GitHub Actions** সিলেক্ট করুন।
+
+3. **স্বয়ংক্রিয় ডিপ্লয়মেন্ট:**
+   - আপনার রিপোজিটরির **Actions** ট্যাবে গেলে দেখতে পাবেন `Deploy to GitHub Pages` ওয়ার্কফ্লোটি স্বয়ংক্রিয়ভাবে চলছে।
+   - সম্পন্ন হওয়ার পর আপনার লাইভ সাইটের লিংক পেয়ে যাবেন (যেমন: `https://your-username.github.io/your-repo-name/`)।
+
+---
+
+## 💻 লোকাল মেশিনে রান করার নিয়ম
+
+```bash
+# ডিপেন্ডেন্সি ইনস্টল করুন
+npm install
+
+# ডেভেলপমেন্ট সার্ভার চালু করুন
+npm run dev
+```
+
+ব্রাউজারে `http://localhost:3000` ওপেন করুন।
+
+## ⚙️ ফিচারসমূহ:
+- 📷 শাটার রিসিভ চালান ও মেজারমেন্ট স্লিপ স্ক্যানিং
+- 📐 মিলিমিটার থেকে স্কয়ার মিটার ও স্কয়ার ফিট স্বয়ংক্রিয় রূপান্তর
+- ✏️ রিয়েল-টাইম এডিটেবল টেবিল (সরাসরি ক্লিক করে সাইজ বা পিস পরিবর্তন)
+- 📊 গ্র্যান্ড টোটাল ও রেট/ভাড়া ক্যালকুলেটর
+- 🖨️ A4 প্রিন্ট ও PDF রিপোর্ট তৈরি
+- 📥 Excel (CSV) ডাউনলোড
+- 💬 WhatsApp এ পাঠানোর উপযোগী ফরম্যাটেড সামারি কপি
+- 💾 লোকাল হিস্ট্রি সংরক্ষণ (LocalStorage)
